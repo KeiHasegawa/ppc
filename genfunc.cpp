@@ -39,7 +39,7 @@ void genfunc(const COMPILER::fundef* func, const std::vector<COMPILER::tac*>& v3
   function_exit.m_label = new_label();
   function_exit.m_ref = false;
   if ( !v3ac.empty() )
-    for_each(v3ac.begin(),v3ac.end(),gencode(v3ac));
+    accumulate(v3ac.begin(), v3ac.end(), 0, gencode(v3ac));
   leave();
 #ifdef CXX_GENERATOR
   switch ( func->m_initialize_or_destruct ){

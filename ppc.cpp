@@ -9,30 +9,25 @@
 extern "C" DLL_EXPORT int generator_seed()
 {
 #ifdef _MSC_VER
-        int r = _MSC_VER;
+  int r = _MSC_VER;
 #ifndef CXX_GENERATOR
-        r += 10000000;
+  r += 10000000;
 #else // CXX_GENERATOR
-        r += 20000000;
+  r += 20000000;
 #endif // CXX_GENERATOR
 #ifdef WIN32
-        r += 100000;
+  r += 100000;
 #endif // WIN32
 #endif // _MSC_VER
 #ifdef __GNUC__
-        int r = (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__);
+  int r = (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__);
 #ifndef CXX_GENERATOR
-        r += 30000000;
+  r += 30000000;
 #else // CXX_GENERATOR
-        r += 40000000;
+  r += 40000000;
 #endif // CXX_GENERATOR
 #endif // __GNUC__
-        return r;
-}
-
-extern "C" DLL_EXPORT int generator_sizeof(const COMPILER::type* T)
-{
-        return T->size();
+  return r;
 }
 
 extern "C" DLL_EXPORT

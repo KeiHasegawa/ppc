@@ -10,7 +10,7 @@
 struct gencode::table : std::map<COMPILER::tac::id_t, void (*)(const COMPILER::tac*)> {
   table()
   {
-        using namespace COMPILER;
+    using namespace COMPILER;
     (*this)[tac::ASSIGN] = assign;
     (*this)[tac::ADD] = add;
     (*this)[tac::SUB] = sub;
@@ -27,20 +27,20 @@ struct gencode::table : std::map<COMPILER::tac::id_t, void (*)(const COMPILER::t
     (*this)[tac::CAST] = tc;
     (*this)[tac::ADDR] = addr;
     (*this)[tac::INVLADDR] = invladdr;
-        (*this)[tac::INVRADDR] = invraddr;
-        (*this)[tac::LOFF] = loff;
-        (*this)[tac::ROFF] = roff;
+    (*this)[tac::INVRADDR] = invraddr;
+    (*this)[tac::LOFF] = loff;
+    (*this)[tac::ROFF] = roff;
     (*this)[tac::PARAM] = param;
     (*this)[tac::CALL] = call;
     (*this)[tac::RETURN] = _return;
-        (*this)[tac::GOTO] = _goto;
-        (*this)[tac::TO] = to;
-        (*this)[tac::ALLOC] = alloc;
-        (*this)[tac::ALLOC] = dealloc;
-        (*this)[tac::ASM] = asm_;
+    (*this)[tac::GOTO] = _goto;
+    (*this)[tac::TO] = to;
+    (*this)[tac::ALLOC] = alloc;
+    (*this)[tac::ALLOC] = dealloc;
+    (*this)[tac::ASM] = asm_;
     (*this)[tac::VASTART] = _va_start;
-        (*this)[tac::VAARG] = _va_arg;
-        (*this)[tac::VAEND] = _va_end;
+    (*this)[tac::VAARG] = _va_arg;
+    (*this)[tac::VAEND] = _va_end;
   }
 };
 
@@ -62,39 +62,39 @@ address* getaddr(COMPILER::var* entry)
 
 void copy(address* dst, address* src, int size)
 {
-        if (dst && src) {
-                reg r3(reg::gpr, 3);
-                dst->get(r3);
-                reg r4(reg::gpr, 4);
-                src->get(r4);
-        }
-        else if (dst) {
-                reg r3(reg::gpr, 3);
-                dst->get(r3);
-        }
-        else if (src) {
-                reg r4(reg::gpr, 4);
-                src->get(r4);
-        }
-        out << '\t' << "li 5," << size << '\n';
-        out << '\t' << "bl " << "memcpy" << '\n';
+  if (dst && src) {
+    reg r3(reg::gpr, 3);
+    dst->get(r3);
+    reg r4(reg::gpr, 4);
+    src->get(r4);
+  }
+  else if (dst) {
+    reg r3(reg::gpr, 3);
+    dst->get(r3);
+  }
+  else if (src) {
+    reg r4(reg::gpr, 4);
+    src->get(r4);
+  }
+  out << '\t' << "li 5," << size << '\n';
+  out << '\t' << "bl " << "memcpy" << '\n';
 }
 
 void copy_record_param(const COMPILER::tac* tac)
 {
-        using namespace COMPILER;
-        var* entry = tac->y;
-        const type* T = entry->m_type;
-        if ( T->scalar() )
-                return;
+  using namespace COMPILER;
+  var* entry = tac->y;
+  const type* T = entry->m_type;
+  if ( T->scalar() )
+    return;
 
-        stack* dst = record_param[entry];
-        address* src = getaddr(entry);
-        int size = T->size();
-        copy(dst, src, size);
+  stack* dst = record_param[entry];
+  address* src = getaddr(entry);
+  int size = T->size();
+  copy(dst, src, size);
 }
 
-void gencode::operator()(const COMPILER::tac* ptr)
+int gencode::operator()(int n, const COMPILER::tac* ptr)
 {
   using namespace std;
   using namespace COMPILER;
@@ -106,9 +106,9 @@ void gencode::operator()(const COMPILER::tac* ptr)
   }
 
   if ( cmp_id(ptr, tac::PARAM) && !m_record_stuff ){
-          vector<tac*>::const_iterator p =
-              find_if(m_v3ac.begin() + m_counter,m_v3ac.end(),bind2nd(ptr_fun(cmp_id),tac::CALL));
-    for_each(m_v3ac.begin() + m_counter,p,copy_record_param);
+    vector<tac*>::const_iterator p =
+      find_if(m_v3ac.begin() + n, m_v3ac.end() ,bind2nd(ptr_fun(cmp_id),tac::CALL));
+    for_each(m_v3ac.begin() + n, p, copy_record_param);
     prepare_aggregate_return(*p);
     m_record_stuff = true;
   }
@@ -116,6 +116,7 @@ void gencode::operator()(const COMPILER::tac* ptr)
     m_record_stuff = false;
 
   m_table[ptr->id](ptr);
+  return n + 1;
 }
 
 void gencode::assign(const COMPILER::tac* tac)

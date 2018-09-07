@@ -215,13 +215,12 @@ class gencode {
   static void _va_end(const COMPILER::tac*);
 
   const std::vector<COMPILER::tac*>& m_v3ac;
-  int m_counter;
   bool m_record_stuff;
 public:
   gencode(const std::vector<COMPILER::tac*>& v3ac)
-    : m_v3ac(v3ac), m_counter(-1), m_record_stuff(false)
+    : m_v3ac(v3ac), m_record_stuff(false)
     { m_last = v3ac.back(); }
-  void operator()(const COMPILER::tac*);
+  int operator()(int n, const COMPILER::tac* ptr);
 };
 
 #endif // _GENCODE_H_
