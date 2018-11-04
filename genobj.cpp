@@ -43,14 +43,14 @@ void output_data2(COMPILER::usr* entry)
         map<const var*, address*>::const_iterator p = address_descriptor.find(entry);
         if (p != address_descriptor.end())
                 return;
-        usr::flag flag = entry->m_flag;
+        usr::flag_t flag = entry->m_flag;
         if (flag & usr::TYPEDEF)
                 return;
 
         const type* T = entry->m_type;
         string name = entry->m_name;
 
-        usr::flag mask = usr::flag(usr::EXTERN|usr::FUNCTION);
+        usr::flag_t mask = usr::flag_t(usr::EXTERN|usr::FUNCTION);
         if (flag & mask) {
                 int size = T->size();
                 address_descriptor[entry] = new mem(name, size);

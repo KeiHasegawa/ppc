@@ -30,7 +30,7 @@ void genfunc(const COMPILER::fundef* func, const std::vector<COMPILER::tac*>& v3
   if ( !func->m_csymbol )
         func_label += signature(func->m_type);
 #endif // CXX_GENERATOR
-  usr::flag flag = func->m_usr->m_flag;
+  usr::flag_t flag = func->m_usr->m_flag;
   if ( !(flag & usr::STATIC) )
     out << '\t' << ".global" << '\t' << func_label << '\n';
   out << '\t' << ".align" << '\t' << 4 << '\n';
@@ -185,51 +185,54 @@ int fun_arg(const std::vector<COMPILER::tac*>& v3ac)
   return accumulate(v3ac.begin(),v3ac.end(),n,param_space_aggregate);
 }
 
-inline bool cmp_id(const COMPILER::tac* ptr, COMPILER::tac::id_t id) { return ptr->id == id;  }
+inline bool cmp_id(const COMPILER::tac* ptr, COMPILER::tac::id_t id)
+{
+  return ptr->m_id == id;
+}
 
 void arg_count::operator()(const COMPILER::tac* ptr)
 {
-        using namespace std;
-        using namespace COMPILER;
-        if (cmp_id(ptr, tac::PARAM)) {
-                const var* entry = ptr->y;
-                const type* T = entry->m_type;
-                T = T->promotion();
-                int size = T->size();
-                if (T->scalar())
-                        m_curr += size;
-                else
-                        m_curr += 4;
-        }
-        else if ( cmp_id(ptr, tac::CALL) ){
-                *m_res = max(*m_res,m_curr);
-                m_curr = 0;
-        }
+  using namespace std;
+  using namespace COMPILER;
+  if (cmp_id(ptr, tac::PARAM)) {
+    const var* entry = ptr->y;
+    const type* T = entry->m_type;
+    T = T->promotion();
+    int size = T->size();
+    if (T->scalar())
+      m_curr += size;
+    else
+      m_curr += 4;
+  }
+  else if ( cmp_id(ptr, tac::CALL) ){
+    *m_res = max(*m_res,m_curr);
+    m_curr = 0;
+  }
 }
 
 inline int align(int offset, int size)
 {
-        if (int n = offset % size)
-                return offset + size - n;
-        else
-                return offset;
+  if (int n = offset % size)
+    return offset + size - n;
+  else
+    return offset;
 }
 
 int param_space_aggregate(int offset, COMPILER::tac* ptr)
 {
-        using namespace std;
-        using namespace COMPILER;
-        if (!cmp_id(ptr, tac::PARAM))
-                return offset;
-        var* entry = ptr->y;
-        const type* T = entry->m_type;
-        if (T->scalar())
-                return offset;
+  using namespace std;
+  using namespace COMPILER;
+  if (!cmp_id(ptr, tac::PARAM))
+    return offset;
+  var* entry = ptr->y;
+  const type* T = entry->m_type;
+  if (T->scalar())
+    return offset;
 
-        offset = align(offset, 16);
-        int size = T->size();
-        record_param[entry] = new ::stack(offset, size);
-        return offset + size;
+  offset = align(offset, 16);
+  int size = T->size();
+  record_param[entry] = new ::stack(offset, size);
+  return offset + size;
 }
 
 class recursive_locvar {
@@ -295,7 +298,7 @@ int recursive_locvar::add2(int offset, const COMPILER::usr* u)
         using namespace std;
         using namespace COMPILER;
 
-        usr::flag flag = u->m_flag;
+        usr::flag_t flag = u->m_flag;
 
         map<const var*, address*>::const_iterator p = address_descriptor.find(u);
         if (p != address_descriptor.end()) {
@@ -307,7 +310,7 @@ int recursive_locvar::add2(int offset, const COMPILER::usr* u)
                 return offset;
 
 
-        usr::flag mask = usr::flag(usr::EXTERN | usr::FUNCTION);
+        usr::flag_t mask = usr::flag_t(usr::EXTERN | usr::FUNCTION);
         if (flag & mask)
                 return offset;
 

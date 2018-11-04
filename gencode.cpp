@@ -48,7 +48,7 @@ gencode::table gencode::m_table;
 
 inline bool cmp_id(const COMPILER::tac* ptr, COMPILER::tac::id_t id)
 {
-  return ptr->id == id;
+  return ptr->m_id == id;
 }
 
 address* getaddr(COMPILER::var* entry)
@@ -115,7 +115,7 @@ int gencode::operator()(int n, const COMPILER::tac* ptr)
   else if ( cmp_id(ptr, tac::CALL) )
     m_record_stuff = false;
 
-  m_table[ptr->id](ptr);
+  m_table[ptr->m_id](ptr);
   return n + 1;
 }
 
