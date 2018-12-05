@@ -35,8 +35,7 @@ struct gencode::table : std::map<COMPILER::tac::id_t, void (*)(const COMPILER::t
     (*this)[tac::RETURN] = _return;
     (*this)[tac::GOTO] = _goto;
     (*this)[tac::TO] = to;
-    (*this)[tac::ALLOC] = alloc;
-    (*this)[tac::ALLOC] = dealloc;
+    (*this)[tac::ALLOCA] = alloca_;
     (*this)[tac::ASM] = asm_;
     (*this)[tac::VASTART] = _va_start;
     (*this)[tac::VAARG] = _va_arg;
@@ -2280,7 +2279,7 @@ void gencode::to(const COMPILER::tac* tac)
         out << '.' << func_label << tac << '\n';
 }
 
-void gencode::alloc(const COMPILER::tac* tac)
+void gencode::alloca_(const COMPILER::tac* tac)
 {
   stack sp_old(0,4);
   reg a(reg::gpr,9);
@@ -2298,11 +2297,6 @@ void gencode::alloc(const COMPILER::tac* tac)
   address* x = getaddr(tac->x);
   alloced_addr* p = static_cast<alloced_addr*>(x);
   p->set(a);
-}
-
-void gencode::dealloc(const COMPILER::tac* tac)
-{
-        // nothing to be done
 }
 
 void gencode::asm_(const COMPILER::tac* tac)

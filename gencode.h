@@ -204,8 +204,7 @@ class gencode {
   static void if_real_ge(const COMPILER::tac*);
   static void _goto(const COMPILER::tac*);
   static void to(const COMPILER::tac*);
-  static void alloc(const COMPILER::tac*);
-  static void dealloc(const COMPILER::tac*);
+  static void alloca_(const COMPILER::tac*);
   static void asm_(const COMPILER::tac*);
   static void _va_start(const COMPILER::tac*);
   static void _va_start_counter(const COMPILER::tac*);
