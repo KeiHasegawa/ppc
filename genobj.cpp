@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
+#ifdef CXX_GENERATOR
+#include "cxx_core.h"
+#else // CXX_GENERATOR
 #include "c_core.h"
-
-#define COMPILER c_compiler
+#endif // CXX_GENERATOR
 
 #include "ppc.h"
 
@@ -232,7 +234,7 @@ struct cxxbuiltin_table : std::map<std::string, std::string> {
   }
 } cxxbuiltin_table;
 
-bool cxxbuiltin(const symbol* entry, std::string* res)
+bool cxxbuiltin(const COMPILER::usr* entry, std::string* res)
 {
   std::string name = entry->m_name;
   std::map<std::string, std::string>::const_iterator p =
@@ -245,12 +247,17 @@ bool cxxbuiltin(const symbol* entry, std::string* res)
     return false;
 }
 
-std::string scope_name(symbol_tree* scope)
+std::string scope_name(COMPILER::scope* ptr)
 {
-  if ( tag* T = dynamic_cast<tag*>(scope) )
-    return scope_name(scope->m_parent) + func_name(T->name());
-  if ( _namespace* nmsp = dynamic_cast<_namespace*>(scope) )
-    return nmsp->name();
+  using namespace COMPILER;
+  if (ptr->m_id == scope::TAG) {
+    tag* T = static_cast<tag*>(ptr);
+    return scope_name(ptr->m_parent) + func_name(T->m_name);
+  }
+  if (ptr->m_id == scope::NAMESPACE) {
+    name_space* nmsp = static_cast<name_space*>(ptr);
+    return nmsp->m_name;
+  }
   return "";
 }
 
@@ -293,25 +300,26 @@ std::string func_name(std::string name)
   return res;
 }
 
-void entry_func_sub(const symbol* func)
+void entry_func_sub(const COMPILER::usr* func)
 {
-  if ( func->m_templ_func )
-    return;
+  using namespace COMPILER;
   if ( address_descriptor.find(func) == address_descriptor.end() ){
     std::string label;
     if ( !cxxbuiltin(func,&label) ){
       label = scope_name(func->m_scope);
       label += func_name(func->m_name);
-      if ( !func->m_csymbol )
+      usr::flag_t flag = func->m_flag;
+      if (!(flag & usr::C_SYMBOL))
         label += signature(func->m_type);
     }
-    address_descriptor[func] = new mem(label,func->m_type);
+    address_descriptor[func] = new mem(label, 0);
   }
 }
 
-void entry_func(const std::pair<std::string,std::vector<symbol*> >& pair)
+void entry_func(const std::pair<std::string,std::vector<COMPILER::usr*> >& pair)
 {
-  const std::vector<symbol*>& vec = pair.second;
+  using namespace COMPILER;
+  const std::vector<usr*>& vec = pair.second;
   std::for_each(vec.begin(),vec.end(),entry_func_sub);
 }
 #endif // CXX_GENERATOR

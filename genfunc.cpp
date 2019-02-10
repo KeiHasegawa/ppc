@@ -1,7 +1,9 @@
 #include "stdafx.h"
+#ifdef CXX_GENERATOR
+#include "cxx_core.h"
+#else // CXX_GENERATOR
 #include "c_core.h"
-
-#define COMPILER c_compiler
+#endif // CXX_GENERATOR
 
 #include "ppc.h"
 #include "gencode.h"
@@ -17,36 +19,32 @@ struct anonymous_table anonymous_table;
 
 std::string func_label;
 
-void genfunc(const COMPILER::fundef* func, const std::vector<COMPILER::tac*>& v3ac)
+void genfunc(const COMPILER::fundef* fdef,
+             const std::vector<COMPILER::tac*>& v3ac)
 {
   using namespace std;
   using namespace COMPILER;
   output_section(rom);
+  usr* func = fdef->m_usr;
+  usr::flag_t flag = func->m_flag;
 #ifndef CXX_GENERATOR
-  func_label = func->m_usr->m_name;
+  func_label = func->m_name;
 #else // CXX_GENERATOR
   func_label = scope_name(func->m_scope);
   func_label += func_name(func->m_name);
-  if ( !func->m_csymbol )
-        func_label += signature(func->m_type);
+  if (flag & usr::C_SYMBOL)
+    func_label += signature(func->m_type);
 #endif // CXX_GENERATOR
-  usr::flag_t flag = func->m_usr->m_flag;
   if ( !(flag & usr::STATIC) )
     out << '\t' << ".global" << '\t' << func_label << '\n';
   out << '\t' << ".align" << '\t' << 4 << '\n';
   out << func_label << ":\n";
-  enter(func,v3ac);
+  enter(fdef,v3ac);
   function_exit.m_label = new_label();
   function_exit.m_ref = false;
   if ( !v3ac.empty() )
     accumulate(v3ac.begin(), v3ac.end(), 0, gencode(v3ac));
   leave();
-#ifdef CXX_GENERATOR
-  switch ( func->m_initialize_or_destruct ){
-  case _initialize: ctors.push_back(name); break;
-  case _destruct: dtor_name = name; break;
-  }
-#endif // CXX_GENERATOR
 }
 
 int sched_stack(const COMPILER::fundef* func, const std::vector<COMPILER::tac*>&);
@@ -86,6 +84,9 @@ void enter(const COMPILER::fundef* func, const std::vector<COMPILER::tac*>& v3ac
   int n = sched_stack(func,v3ac);
   enter_helper(n);
 
+#ifdef CXX_GENERATOR
+  typedef scope param_scope;
+#endif // CXX_GENERATOR
   param_scope* param = func->m_param;
   const vector<usr*>& vec = param->m_order;
   for_each(vec.begin(),vec.end(),save_param());
@@ -251,6 +252,9 @@ int local_variable(const COMPILER::fundef* func, int n)
 {
   using namespace std;
   using namespace COMPILER;
+#ifdef CXX_GENERATOR
+  typedef scope param_scope;
+#endif // CXX_GENERATOR
   param_scope* param = func->m_param;
   assert(param->m_children.size() == 1);
   scope* tree = param->m_children[0];

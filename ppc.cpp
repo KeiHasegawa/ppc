@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
+#ifdef CXX_GENERATOR
+#include "cxx_core.h"
+#else // CXX_GENERATOR
 #include "c_core.h"
-
-#define COMPILER c_compiler
+#endif // CXX_GENERATOR
 
 #include "ppc.h"
 
@@ -480,14 +482,18 @@ stack* tmp_dword;
 stack* tmp_word;
 
 #ifdef CXX_GENERATOR
-std::string signature(const type_expr* type)
+std::string signature(const COMPILER::type* T)
 {
-#ifdef _MSC_VER
-  use_ostream_magic obj;
-#endif // _MSC_VER
-  std::ostringstream os;
-  type->encode(os);
-  return func_name(os.str());
+  using namespace std;
+  using namespace COMPILER;
+  ostringstream os;
+  assert(T->m_id == type::FUNC);
+  typedef const func_type FT;
+  FT* ft = static_cast<FT*>(T);
+  const vector<const type*>& param = ft->param();
+  for (auto T : param)
+    T->encode(os);
+  return os.str();
 }
 #endif // CXX_GENERATOR
 

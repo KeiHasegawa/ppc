@@ -7,6 +7,12 @@
 #define DLL_EXPORT
 #endif // defined(_MSC_VER) || defined(__CYGWIN__)
 
+#ifdef CXX_GENERATOR
+#define COMPILER cxx_compiler
+#else // CXX_GENERATOR
+#define COMPILER c_compiler
+#endif // CXX_GENERATOR
+
 extern void genobj(const COMPILER::scope*);
 
 extern void genfunc(const COMPILER::fundef* fun, const std::vector<COMPILER::tac*>& vc);
@@ -110,13 +116,12 @@ extern std::string new_label();
 extern std::map<COMPILER::var*, stack*> record_param;
 
 #ifdef CXX_GENERATOR
-extern std::string scope_name(symbol_tree*);
+extern std::string scope_name(COMPILER::scope*);
 extern std::string func_name(std::string);
-extern std::string signature(const type_expr*);
+extern std::string signature(const COMPILER::type*);
 
-class tag;
-struct anonymous_table : std::map<const tag*, address*> {
-  static void destroy(std::pair<const tag*, address*> pair)
+struct anonymous_table : std::map<const COMPILER::tag*, address*> {
+  static void destroy(std::pair<const COMPILER::tag*, address*> pair)
   {
     delete pair.second;
   }
@@ -124,7 +129,7 @@ struct anonymous_table : std::map<const tag*, address*> {
   {
     std::for_each(begin(),end(),destroy);
     using namespace std;
-    map<const tag*, address*>::clear();
+    map<const COMPILER::tag*, address*>::clear();
   }
   ~anonymous_table()
   {

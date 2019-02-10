@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
+#ifdef CXX_GENERATOR
+#include "cxx_core.h"
+#else // CXX_GENERATOR
 #include "c_core.h"
-
-#define COMPILER c_compiler
+#endif // CXX_GENERATOR
 
 #include "ppc.h"
 #include "gencode.h"
