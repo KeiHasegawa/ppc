@@ -32,7 +32,7 @@ void genfunc(const COMPILER::fundef* fdef,
 #else // CXX_GENERATOR
   func_label = scope_name(func->m_scope);
   func_label += func_name(func->m_name);
-  if (flag & usr::C_SYMBOL)
+  if (!(flag & usr::C_SYMBOL))
     func_label += signature(func->m_type);
 #endif // CXX_GENERATOR
   if ( !(flag & usr::STATIC) )
