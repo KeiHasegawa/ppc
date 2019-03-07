@@ -279,9 +279,10 @@ void recursive_locvar::operator()(const COMPILER::scope* tree)
 {
   using namespace std;
   using namespace COMPILER;
+  if (tree->m_id != scope::BLOCK)
+    return;
   const map<string, vector<usr*> >& usrs = tree->m_usrs;
   *m_res = accumulate(usrs.begin(),usrs.end(),*m_res,add1);
-  assert(tree->m_id == scope::BLOCK);
   const block* b = static_cast<const block*>(tree);
   const vector<var*>& vars = b->m_vars;
   *m_res = accumulate(vars.begin(), vars.end(), *m_res, add3);
@@ -289,60 +290,62 @@ void recursive_locvar::operator()(const COMPILER::scope* tree)
   for_each(children.begin(),children.end(),recursive_locvar(m_res));
 }
 
-int recursive_locvar::add1(int offset, const std::pair<std::string, std::vector<COMPILER::usr*> >& x)
+int recursive_locvar::add1(int offset,
+                           const std::pair<std::string,
+                           std::vector<COMPILER::usr*> >& x)
 {
-        using namespace std;
-        using namespace COMPILER;
-        const vector<usr*>& vec = x.second;
-        return accumulate(vec.begin(), vec.end(), offset, add2);
+  using namespace std;
+  using namespace COMPILER;
+  const vector<usr*>& vec = x.second;
+  return accumulate(vec.begin(), vec.end(), offset, add2);
 }
 
 int recursive_locvar::add2(int offset, const COMPILER::usr* u)
 {
-        using namespace std;
-        using namespace COMPILER;
+  using namespace std;
+  using namespace COMPILER;
 
-        usr::flag_t flag = u->m_flag;
+  usr::flag_t flag = u->m_flag;
 
-        map<const var*, address*>::const_iterator p = address_descriptor.find(u);
-        if (p != address_descriptor.end()) {
-                assert(flag & usr::STATIC);
-                return offset;
-        }
+  map<const var*, address*>::const_iterator p = address_descriptor.find(u);
+  if (p != address_descriptor.end()) {
+    assert(flag & usr::STATIC);
+    return offset;
+  }
 
-        if (flag & usr::TYPEDEF)
-                return offset;
+  if (flag & usr::TYPEDEF)
+    return offset;
 
 
-        usr::flag_t mask = usr::flag_t(usr::EXTERN | usr::FUNCTION);
-        if (flag & mask)
-                return offset;
+  usr::flag_t mask = usr::flag_t(usr::EXTERN | usr::FUNCTION);
+  if (flag & mask)
+    return offset;
 
-        if (u->isconstant())
-                return offset;
+  if (u->isconstant())
+    return offset;
 
-        const type* T = u->m_type;
-        if (T->m_id == type::VARRAY) {
-                offset = align(offset, 4);
-                address_descriptor[u] = new alloced_addr(offset);
-                return offset + 4;
-        }
+  const type* T = u->m_type;
+  if (T->m_id == type::VARRAY) {
+    offset = align(offset, 4);
+    address_descriptor[u] = new alloced_addr(offset);
+    return offset + 4;
+  }
 
-        offset = align(offset,T->align());
-        int size = T->size();
-        address_descriptor[u] = new ::stack(offset,size);
-        return offset + size;
+  offset = align(offset,T->align());
+  int size = T->size();
+  address_descriptor[u] = new ::stack(offset,size);
+  return offset + size;
 }
 
 int recursive_locvar::add3(int offset, const COMPILER::var* v)
 {
-        using namespace std;
-        using namespace COMPILER;
-        const type* T = v->m_type;
-        int size = T->size();
-        offset = align(offset, T->align());
-        address_descriptor[v] = new ::stack(-offset, size);
-        return offset + size;
+  using namespace std;
+  using namespace COMPILER;
+  const type* T = v->m_type;
+  int size = T->size();
+  offset = align(offset, T->align());
+  address_descriptor[v] = new ::stack(-offset, size);
+  return offset + size;
 }
 
 int parameter::m_hidden;
@@ -350,21 +353,21 @@ int parameter::m_hidden;
 parameter::parameter(int* p, const COMPILER::type* T)
   : m_res(p), m_gpr(3), m_fpr(1), m_offset(0)
 {
-        using namespace std;
-        using namespace COMPILER;
-        assert(T->m_id == type::FUNC);
-        typedef const func_type FUNC;
-        FUNC* ft = static_cast<FUNC*>(T);
-        T = ft->return_type();
-        T = T->unqualified();
+  using namespace std;
+  using namespace COMPILER;
+  assert(T->m_id == type::FUNC);
+  typedef const func_type FUNC;
+  FUNC* ft = static_cast<FUNC*>(T);
+  T = ft->return_type();
+  T = T->unqualified();
 
-        if (T->m_id == type::RECORD) {
-                m_hidden = *m_res;
-                *m_res += 4;
-                ++m_gpr;
-        }
-        else
-                m_hidden = -1;
+  if (T->m_id == type::RECORD) {
+    m_hidden = *m_res;
+    *m_res += 4;
+    ++m_gpr;
+  }
+  else
+    m_hidden = -1;
 }
 
 void parameter::operator()(const COMPILER::usr* entry)
@@ -376,23 +379,23 @@ void parameter::operator()(const COMPILER::usr* entry)
 
 void parameter::scalar_handler(const COMPILER::usr* entry)
 {
-        using namespace std;
-        using namespace COMPILER;
-        const type* T = entry->m_type;
-        if ( T->real() ? m_fpr > 8 : m_gpr > 10 )
-                return;
-        int unpromed = T->size();
-        T = T->promotion();
-        int size = T->size();
-        int offset = *m_res + size - unpromed;
-        address_descriptor[entry] = new ::stack(offset,unpromed);
-        *m_res += size;
-        if ( T->real() )
-                ++m_fpr;
-        else if ( size == 4 )
-                ++m_gpr;
-        else
-                m_gpr += ((m_gpr & 1) ? 2 : 3);
+  using namespace std;
+  using namespace COMPILER;
+  const type* T = entry->m_type;
+  if ( T->real() ? m_fpr > 8 : m_gpr > 10 )
+    return;
+  int unpromed = T->size();
+  T = T->promotion();
+  int size = T->size();
+  int offset = *m_res + size - unpromed;
+  address_descriptor[entry] = new ::stack(offset,unpromed);
+  *m_res += size;
+  if ( T->real() )
+    ++m_fpr;
+  else if ( size == 4 )
+    ++m_gpr;
+  else
+    m_gpr += ((m_gpr & 1) ? 2 : 3);
 }
 
 void parameter::aggregate_handler(const COMPILER::usr* entry)
@@ -414,23 +417,23 @@ save_param::save_param() : m_gpr(3), m_fpr(1), m_offset(0)
 
 void save_param::operator()(const COMPILER::usr* entry)
 {
-        using namespace std;
-        using namespace COMPILER;
-        const type* T = entry->m_type;
-        if ( T->real() ){
-                if ( m_fpr > 8 )
-                        return decide_real(entry);
-        }
-        else {
-                if ( m_gpr > 10 )
-                        return T->scalar() ? decide_notreal(entry) : decide_aggregate(entry);
-        }
+  using namespace std;
+  using namespace COMPILER;
+  const type* T = entry->m_type;
+  if ( T->real() ){
+    if ( m_fpr > 8 )
+      return decide_real(entry);
+  }
+  else {
+    if ( m_gpr > 10 )
+      return T->scalar() ? decide_notreal(entry) : decide_aggregate(entry);
+  }
 
-        map<const var*, address*>::const_iterator p = address_descriptor.find(entry);
-        assert(p != address_descriptor.end());
-        address* ad = p->second;
-        const ::stack* st = static_cast<const ::stack*>(ad);
-        T->real() ? save_fpr(st) : save_gpr(st);
+  map<const var*, address*>::const_iterator p = address_descriptor.find(entry);
+  assert(p != address_descriptor.end());
+  address* ad = p->second;
+  const ::stack* st = static_cast<const ::stack*>(ad);
+  T->real() ? save_fpr(st) : save_gpr(st);
 }
 
 void save_param::save_gpr(const stack* st)
@@ -464,54 +467,54 @@ void save_param::save_fpr(const stack* st)
 
 void save_param::decide_notreal(const COMPILER::usr* entry)
 {
-        using namespace std;
-        using namespace COMPILER;
-        if (!m_offset)
-                m_offset = stack_layout.m_size + 8;
-        const type* T = entry->m_type;
-        int unpromed = T->size();
-        T = T->promotion();
-        int size = T->size();
-        m_offset = align(m_offset, T->align());
-        address_descriptor[entry] = new ::stack(m_offset + size - unpromed, unpromed);
-        m_offset += size;
+  using namespace std;
+  using namespace COMPILER;
+  if (!m_offset)
+    m_offset = stack_layout.m_size + 8;
+  const type* T = entry->m_type;
+  int unpromed = T->size();
+  T = T->promotion();
+  int size = T->size();
+  m_offset = align(m_offset, T->align());
+  address_descriptor[entry] = new ::stack(m_offset + size - unpromed, unpromed);
+  m_offset += size;
 }
 
 void save_param::decide_aggregate(const COMPILER::usr* entry)
 {
-        using namespace std;
-        using namespace COMPILER;
-        if (!m_offset)
-                m_offset = stack_layout.m_size + 8;
-        address_descriptor[entry] = new ::stack(m_offset, -1);
-        m_offset += 4;
+  using namespace std;
+  using namespace COMPILER;
+  if (!m_offset)
+    m_offset = stack_layout.m_size + 8;
+  address_descriptor[entry] = new ::stack(m_offset, -1);
+  m_offset += 4;
 }
 
 void save_param::decide_real(const COMPILER::usr* entry)
 {
-        using namespace std;
-        using namespace COMPILER;
-        if ( !m_offset )
-            m_offset = stack_layout.m_size + 8;
-        const type* T = entry->m_type;
-        int size = T->size();
-        m_offset = align(m_offset, T->align());
-        address_descriptor[entry] = new ::stack(m_offset, size);
-        m_offset += size;
+  using namespace std;
+  using namespace COMPILER;
+  if ( !m_offset )
+    m_offset = stack_layout.m_size + 8;
+  const type* T = entry->m_type;
+  int size = T->size();
+  m_offset = align(m_offset, T->align());
+  address_descriptor[entry] = new ::stack(m_offset, size);
+  m_offset += size;
 }
 
 bool take_varg(const COMPILER::type* T)
 {
-        using namespace std;
-        using namespace COMPILER;
-        assert(T->m_id == type::FUNC);
-        typedef const func_type FUNC;
-        FUNC* ft = static_cast<FUNC*>(T);
-        const vector<const type*>& param = ft->param();
-        if (param.empty())
-                return false;
-        T = param.back();
-        return T->m_id == type::ELLIPSIS;
+  using namespace std;
+  using namespace COMPILER;
+  assert(T->m_id == type::FUNC);
+  typedef const func_type FUNC;
+  FUNC* ft = static_cast<FUNC*>(T);
+  const vector<const type*>& param = ft->param();
+  if (param.empty())
+    return false;
+  T = param.back();
+  return T->m_id == type::ELLIPSIS;
 }
 
 struct current_varg current_varg;
@@ -545,9 +548,9 @@ int use_gpr(int n, const COMPILER::usr* entry)
 
 bool use_fpr(const COMPILER::usr* entry)
 {
-        using namespace COMPILER;
-        const type* T = entry->m_type;
-        return T->real();
+  using namespace COMPILER;
+  const type* T = entry->m_type;
+  return T->real();
 }
 
 int decide_if_varg(int n, const COMPILER::type* T, const std::vector<COMPILER::usr*>& param)
