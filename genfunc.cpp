@@ -43,7 +43,7 @@ void genfunc(const COMPILER::fundef* fdef,
   function_exit.m_label = new_label();
   function_exit.m_ref = false;
   if ( !v3ac.empty() )
-    accumulate(v3ac.begin(), v3ac.end(), 0, gencode(v3ac));
+    (void)accumulate(v3ac.begin(), v3ac.end(), 0, gencode(v3ac));
   leave();
 }
 
